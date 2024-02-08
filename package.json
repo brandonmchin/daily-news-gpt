@@ -2,17 +2,17 @@
   "name": "daily-news-gpt",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "scripts": {
+    "start": "npx functions-framework --target=main --signature-type=http --port=8080"
+  },
   "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0",
     "dotenv": "^16.4.1",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "^2.7.0",
     "nodemailer": "^6.9.9",
     "openai": "^4.26.0"
   }

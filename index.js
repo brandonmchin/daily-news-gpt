@@ -1,17 +1,16 @@
-import OpenAI from "openai";
-import fetch from "node-fetch";
-import nodemailer from "nodemailer";
-import {
+const OpenAI = require("openai");
+const fetch = require("node-fetch");
+const nodemailer = require("nodemailer");
+const functions = require('@google-cloud/functions-framework');
+
+const {
   buildSection,
   buildTinySection,
   buildHtmlContent,
-} from "./template.js";
-import dotenv from "dotenv";
-dotenv.config();
+} = require("./template.js");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const dotenv = require("dotenv");
+dotenv.config();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -24,7 +23,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function delay(ms) {
+  console.log(`Waiting ${ms} ms...`);
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 async function getTopGNews(category) {
+  await delay(2000); // Wait 2s (2000 ms) for rate-limiting
+
   const url =
     "https://gnews.io/api/v4/top-headlines?category=" +
     category +
@@ -37,16 +43,24 @@ async function getTopGNews(category) {
     const gnewsData = await gnews.json();
     const articles = gnewsData.articles;
 
-    // Return the first 3 articles
     console.log(`Fetched ${category} news`);
-    return articles.slice(0, 3);
+
+    if (Array.isArray(articles) && articles.length >= 3) {
+      return articles.slice(0, 3); // Return the first 3 articles
+    } else {
+      return articles;
+    }
   } catch (error) {
-    console.error(error);
+    console.error("Oh no... ", error);
     return process.exit(1);
   }
-}
+};
 
 async function summarizeWithGPT(article) {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  
   const prompt = "Can you summarize this article? " + article["url"];
 
   try {
@@ -70,10 +84,10 @@ async function summarizeWithGPT(article) {
     console.log(`Summarized article "${article.url}"`);
     return summary;
   } catch (error) {
-    console.error(error);
+    console.error("Oh no... ", error);
     return process.exit(1);
   }
-}
+};
 
 async function sendMail(sections) {
   try {
@@ -88,21 +102,21 @@ async function sendMail(sections) {
     });
     console.log("Message sent: %s", response.messageId);
   } catch (error) {
-    console.error(error);
+    console.error("Oh no... ", error);
     return process.exit(1);
   }
-}
+};
 
-async function main() {
-  // Get news from various categories
-  const technologyNews = await getTopGNews("technology"); // Top 3
-  const scienceNews = await getTopGNews("science"); // Top 3
-  const worldNews = await getTopGNews("world").slice(0, 2); // Top 2
-  const usNews = await getTopGNews("nation").slice(0, 2); // Top 2
-  const businessNews = await getTopGNews("business").slice(0, 2); // Top 2
-  const generalNews = await getTopGNews("general"); // Top 3
+functions.http("main", async (req, res) => {
+  // Get top articles from a few categories
+  const technologyNews = await getTopGNews("technology");
+  const scienceNews = await getTopGNews("science");
+  const worldNews = await getTopGNews("world");
+  const usNews = await getTopGNews("nation");
+  const businessNews = await getTopGNews("business");
+  const generalNews = await getTopGNews("general");
 
-  // Get summaries
+  // Get summaries for each article in each category
   const technologyNewsSummaries = await Promise.all(
     technologyNews.map((article) => summarizeWithGPT(article)));
   const scienceNewsSummaries = await Promise.all(
@@ -133,6 +147,7 @@ async function main() {
     businessNewsSection,
     generalNewsSection,
   ]);
-}
 
-main();
+  console.log("Message has been processed");
+  res.end();
+});

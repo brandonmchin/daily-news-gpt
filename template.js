@@ -7,7 +7,7 @@ const categoryTitleMap = {
     "general": "Other News",
 };
 
-export function buildSection(category, summaryObjArr) {
+function buildSection(category, summaryObjArr) {
     const sectionTitle = categoryTitleMap[category];
     const sectionHtml = summaryObjArr.map((summaryObj) => `
         <a href="${summaryObj.url}" target="_blank">
@@ -22,7 +22,7 @@ export function buildSection(category, summaryObjArr) {
     return `<h2>${sectionTitle}</h2>${sectionHtml}`;
 };
 
-export function buildTinySection(category, summaryObjArr) {
+function buildTinySection(category, summaryObjArr) {
     const sectionTitle = categoryTitleMap[category];
     const sectionHtml = summaryObjArr.map((summaryObj) => `
       <a href="${summaryObj.url}" target="_blank">
@@ -32,7 +32,7 @@ export function buildTinySection(category, summaryObjArr) {
     return `<h2>${sectionTitle}</h2>${sectionHtml}`;
 };
 
-export const buildHtmlContent = (sectionsArr) => {
+const buildHtmlContent = (sectionsArr) => {
     const sectionsHtml = sectionsArr.join('');
     return `
         <h1>News GPT</h1>
@@ -42,4 +42,10 @@ export const buildHtmlContent = (sectionsArr) => {
         <br>
         <h4>That's all for now!</h4>
     `;
+};
+
+module.exports = {
+    buildSection,
+    buildTinySection,
+    buildHtmlContent
 };
